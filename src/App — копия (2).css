@@ -1,0 +1,64 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+.App {
+  font-family: Arial, sans-serif;
+}
+
+.navbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 2rem;
+  background-color: #333;
+  color: white;
+}
+
+.nav-links {
+  display: flex;
+  list-style: none;
+  gap: 2rem;
+}
+
+.nav-links a {
+  color: white;
+  text-decoration: none;
+}
+
+.nav-links a:hover {
+  color: #61dafb;
+}
+
+.hero {
+  text-align: center;
+  padding: 4rem 2rem;
+  background-color: #f0f0f0;
+}
+
+.about, .contact {
+  padding: 3rem 2rem;
+  text-align: center;
+}
+
+button {
+  padding: 10px 20px;
+  background-color: #61dafb;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 1rem;
+}
+
+button:hover {
+  background-color: #21a0c4;
+}
+
+footer {
+  text-align: center;
+  padding: 2rem;
+  background-color: #333;
+  color: white;
+}

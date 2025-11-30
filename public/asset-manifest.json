@@ -1,0 +1,15 @@
+{
+  "files": {
+    "main.css": "/test/static/css/main.6063c591.css",
+    "main.js": "/test/static/js/main.bd034b29.js",
+    "static/media/Map.svg": "/test/static/media/Map.bb5d42e7db6d4a422c86e84ebc2f73a9.svg",
+    "static/media/fest-logo.png": "/test/static/media/fest-logo.05bbfa168b7d380f5d0c.png",
+    "index.html": "/test/index.html",
+    "main.6063c591.css.map": "/test/static/css/main.6063c591.css.map",
+    "main.bd034b29.js.map": "/test/static/js/main.bd034b29.js.map"
+  },
+  "entrypoints": [
+    "static/css/main.6063c591.css",
+    "static/js/main.bd034b29.js"
+  ]
+}
