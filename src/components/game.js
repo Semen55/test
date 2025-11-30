@@ -263,7 +263,7 @@ const Game = ({ map }) => {
             // 2. Check if image exists
             let hasImage = false;
             try {
-              const imgResponse = await fetch(`/tasks/pics/${taskNumber}.png`, { method: 'HEAD' });
+              const imgResponse = await fetch(`/test/tasks/pics/${taskNumber}.png`, { method: 'HEAD' });
               if (imgResponse.ok) {
                 const contentType = imgResponse.headers.get('content-type');
                 // Only accept if it's actually an image or if we can't check content-type but response was OK
