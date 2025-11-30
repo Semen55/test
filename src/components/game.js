@@ -278,7 +278,7 @@ const Game = ({ map }) => {
             tasks.push({
               id: taskNumber,
               text: text.trim(),
-              imagePath: hasImage ? `/tasks/pics/${taskNumber}.png` : null,
+              imagePath: hasImage ? `/test/tasks/pics/${taskNumber}.png` : null,
             });
 
             taskNumber++;
