@@ -86,8 +86,8 @@ const TeamCard = ({ team, isMyTurn, onTeamClick, gameState, isAttacker, isDefend
       </TeamCardContentContainer>
       {showRoleIcon ? (
         <RoleIconContainer>
-          {isAttacker && <RoleIcon src="/images/attack-icon.png" alt="Атакует" />}
-          {isDefender && <RoleIcon src="/images/defend-icon.png" alt="Защищается" />}
+          {isAttacker && <RoleIcon src="/test/images/attack-icon.png" alt="Атакует" />}
+          {isDefender && <RoleIcon src="/test/images/defend-icon.png" alt="Защищается" />}
         </RoleIconContainer>
       ) : showDeadBadge ? (
         <RoleIconContainer>
