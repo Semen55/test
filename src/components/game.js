@@ -787,7 +787,7 @@ const Game = ({ map }) => {
           onClick={undo}
           title="Отменить последнее действие"
         >
-          <img src="/images/undo-icon.png" alt="Отменить" />
+          <img src="./images/undo-icon.png" alt="Отменить" />
         </UndoButton>
 
         <RedoButton
