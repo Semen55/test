@@ -60,6 +60,15 @@ const StartGameButton = styled(ButtonCommon)`
     `}
 `;
 
+const NextTurnButton = styled(ButtonCommon)`
+  ${({ isDisabled }) =>
+    isDisabled &&
+    css`
+      pointer-events: none;
+      background-color: #7c7c7c;
+    `}
+`;
+
 const TeamsList = styled.div`
   display: flex;
   flex-direction: column;
@@ -136,7 +145,7 @@ const GameControls = ({
       </TeamsList>
       {gameState !== 'prepare' && (
         <GameStatusContainer>
-          <ButtonCommon onClick={() => onTurnComplete()}>TMP NEXT TURN</ButtonCommon>
+          <NextTurnButton onClick={() => onTurnComplete()} isDisabled={true}>TMP NEXT TURN</NextTurnButton>
           <Title>Раунд: {roundNumber}</Title>
           <Title>Ход команды: {teams[activeTeam].name}</Title>
         </GameStatusContainer>
