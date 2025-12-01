@@ -238,6 +238,7 @@ const Game = ({ map }) => {
   const [availableTasks, setAvailableTasks] = React.useState([]);
 
   const [availableColors, setAvailableColors] = React.useState([...initialColors]);
+  const [usedTaskIds, setUsedTaskIds] = React.useState(new Set());
 
   // Load available tasks on component mount
   React.useEffect(() => {
@@ -250,7 +251,7 @@ const Game = ({ map }) => {
         while (taskNumber <= 100) {
           try {
             // 1. Fetch the text file
-            const response = await fetch(`/test/tasks/${taskNumber}.txt`);
+            const response = await fetch(`/tasks/${taskNumber}.txt`);
             if (!response.ok) break;
 
             const text = await response.text();
@@ -298,11 +299,14 @@ const Game = ({ map }) => {
 
   // Helper function to select random tasks
   const selectRandomTasks = React.useCallback((count) => {
-    if (availableTasks.length === 0) return [];
+    // Filter out used tasks
+    const unusedTasks = availableTasks.filter(task => !usedTaskIds.has(task.id));
 
-    const shuffled = [...availableTasks].sort(() => Math.random() - 0.5);
-    return shuffled.slice(0, Math.min(count, availableTasks.length));
-  }, [availableTasks]);
+    if (unusedTasks.length === 0) return [];
+
+    const shuffled = [...unusedTasks].sort(() => Math.random() - 0.5);
+    return shuffled.slice(0, Math.min(count, unusedTasks.length));
+  }, [availableTasks, usedTaskIds]);
 
   // History state
   const [history, setHistory] = React.useState([]);
@@ -317,10 +321,13 @@ const Game = ({ map }) => {
       roundNumber,
       activeTeam,
       availableColors: [...availableColors],
+      usedTaskIds: new Set(usedTaskIds),
+      pendingCaptureZone,
+      captureState: JSON.parse(JSON.stringify(captureState)),
     };
     setHistory((prev) => [...prev, currentState]);
     setFuture([]);
-  }, [teams, gameState, turnsOrder, currentTurn, roundNumber, activeTeam, availableColors]);
+  }, [teams, gameState, turnsOrder, currentTurn, roundNumber, activeTeam, availableColors, usedTaskIds, pendingCaptureZone, captureState]);
 
   const restoreState = React.useCallback((state) => {
     setTeams(state.teams);
@@ -330,23 +337,114 @@ const Game = ({ map }) => {
     setRoundNumber(state.roundNumber);
     setActiveTeam(state.activeTeam);
     setAvailableColors(state.availableColors);
+    setUsedTaskIds(state.usedTaskIds || new Set());
 
-    // Reset UI states
-    setPendingCaptureZone(null);
-    setCaptureState({
-      attackerAnswered: false,
-      defenderAnswered: false,
-      attackerCorrect: null,
-      defenderCorrect: null,
-      firstResponder: null,
-      isNeutral: false,
-      attackerAnswer: null,
-      defenderAnswer: null,
-      responseOrder: [],
-    });
+    // Restore UI states
+    setPendingCaptureZone(state.pendingCaptureZone || null);
+
+    // If we're restoring a capture state, reset the answered states
+    // to prevent auto-resolution while keeping task information
+    if (state.captureState) {
+      setCaptureState({
+        ...state.captureState,
+        attackerAnswered: false,
+        defenderAnswered: false,
+        attackerCorrect: null,
+        defenderCorrect: null,
+        attackerAnswer: null,
+        defenderAnswer: null,
+        responseOrder: [],
+      });
+    } else {
+      setCaptureState({
+        attackerAnswered: false,
+        defenderAnswered: false,
+        attackerCorrect: null,
+        defenderCorrect: null,
+        firstResponder: null,
+        isNeutral: false,
+        attackerAnswer: null,
+        defenderAnswer: null,
+        responseOrder: [],
+        isCapital: false,
+        consecutiveWins: 0,
+        requiredWins: 3,
+        currentTask: null,
+        capitalTasks: [],
+      });
+    }
   }, []);
 
   const undo = React.useCallback(() => {
+    // If capture window is open
+    if (pendingCaptureZone !== null) {
+      // Special handling for capital attacks with multiple stages
+      if (captureState.isCapital && captureState.consecutiveWins > 0) {
+        // Revert to previous stage instead of closing
+        const previousWins = captureState.consecutiveWins - 1;
+        const previousTask = captureState.capitalTasks[previousWins] || captureState.capitalTasks[0];
+
+        setCaptureState({
+          ...captureState,
+          consecutiveWins: previousWins,
+          currentTask: previousTask,
+          attackerAnswered: false,
+          defenderAnswered: false,
+          attackerCorrect: null,
+          defenderCorrect: null,
+          attackerAnswer: null,
+          defenderAnswer: null,
+          responseOrder: [],
+        });
+        return;
+      }
+
+      // For regular attacks or first stage of capital attack, close the window
+      // Save the current state (with window open) to future before closing
+      const stateWithWindowOpen = {
+        teams: JSON.parse(JSON.stringify(teams)),
+        gameState,
+        turnsOrder: [...turnsOrder],
+        currentTurn,
+        roundNumber,
+        activeTeam,
+        availableColors: [...availableColors],
+        usedTaskIds: new Set(usedTaskIds),
+        pendingCaptureZone,
+        captureState: JSON.parse(JSON.stringify(captureState)),
+      };
+
+      setFuture((prev) => [stateWithWindowOpen, ...prev]);
+
+      setPendingCaptureZone(null);
+      setCaptureState({
+        attackerAnswered: false,
+        defenderAnswered: false,
+        attackerCorrect: null,
+        defenderCorrect: null,
+        firstResponder: null,
+        isNeutral: false,
+        attackerAnswer: null,
+        defenderAnswer: null,
+        responseOrder: [],
+        isCapital: false,
+        consecutiveWins: 0,
+        requiredWins: 3,
+        currentTask: null,
+        capitalTasks: [],
+      });
+
+      // Also revert the used tasks that were marked when opening this window
+      // by restoring from the last history state
+      if (history.length > 0) {
+        const lastState = history[history.length - 1];
+        if (lastState.usedTaskIds) {
+          setUsedTaskIds(lastState.usedTaskIds);
+        }
+      }
+      return;
+    }
+
     if (history.length === 0) return;
 
     const previousState = history[history.length - 1];
@@ -360,12 +458,15 @@ const Game = ({ map }) => {
       roundNumber,
       activeTeam,
       availableColors: [...availableColors],
+      usedTaskIds: new Set(usedTaskIds),
+      pendingCaptureZone,
+      captureState: JSON.parse(JSON.stringify(captureState)),
     };
 
     setFuture((prev) => [currentState, ...prev]);
     setHistory(newHistory);
     restoreState(previousState);
-  }, [history, teams, gameState, turnsOrder, currentTurn, roundNumber, activeTeam, availableColors, restoreState]);
+  }, [history, teams, gameState, turnsOrder, currentTurn, roundNumber, activeTeam, availableColors, usedTaskIds, pendingCaptureZone, captureState, restoreState]);
 
   const redo = React.useCallback(() => {
     if (future.length === 0) return;
@@ -373,6 +474,7 @@ const Game = ({ map }) => {
     const nextState = future[0];
     const newFuture = future.slice(1);
 
+    // Save current state to history before restoring
     const currentState = {
       teams: JSON.parse(JSON.stringify(teams)),
       gameState,
@@ -381,12 +483,15 @@ const Game = ({ map }) => {
       roundNumber,
       activeTeam,
       availableColors: [...availableColors],
+      usedTaskIds: new Set(usedTaskIds),
+      pendingCaptureZone,
+      captureState: JSON.parse(JSON.stringify(captureState)),
     };
 
     setHistory((prev) => [...prev, currentState]);
     setFuture(newFuture);
     restoreState(nextState);
-  }, [future, teams, gameState, turnsOrder, currentTurn, roundNumber, activeTeam, availableColors, restoreState]);
+  }, [future, teams, gameState, turnsOrder, currentTurn, roundNumber, activeTeam, availableColors, usedTaskIds, pendingCaptureZone, captureState, restoreState]);
 
   // Получаем basePositions из teams
   const basePositions = React.useMemo(() => {
@@ -505,8 +610,17 @@ const Game = ({ map }) => {
           currentTask = selectedTasks[0] || null;
         } else {
           // For regular territory, select 1 task
-          const tasks = selectRandomTasks(1);
-          currentTask = tasks[0] || null;
+          selectedTasks = selectRandomTasks(1);
+          currentTask = selectedTasks[0] || null;
+        }
+
+        // Mark tasks as used
+        if (selectedTasks.length > 0) {
+          setUsedTaskIds(prev => {
+            const next = new Set(prev);
+            selectedTasks.forEach(t => next.add(t.id));
+            return next;
+          });
         }
         setPendingCaptureZone(zoneId);
         setCaptureState({
@@ -827,9 +941,11 @@ const Game = ({ map }) => {
                 </CaptureModalTitle>
                 <CaptureModalText>
                   {captureState.currentTask ? captureState.currentTask.text : (
-                    captureState.isCapital
-                      ? `Атака на столицу! Для захвата необходимо победить в ${captureState.requiredWins} схватках подряд.`
-                      : 'Захват вражеской территории. Здесь будет описание задания или подсказка для игрока. После выполнения задания выберите результат атаки для атакующих и защищающихся.'
+                    availableTasks.length > 0 && usedTaskIds.size >= availableTasks.length
+                      ? 'Задач нет'
+                      : (captureState.isCapital
+                        ? `Атака на столицу! Для захвата необходимо победить в ${captureState.requiredWins} схватках подряд.`
+                        : 'Захват вражеской территории. Здесь будет описание задания или подсказка для игрока. После выполнения задания выберите результат атаки для атакующих и защищающихся.')
                   )}
                 </CaptureModalText>
                 {captureState.currentTask && captureState.currentTask.imagePath && (
