@@ -251,7 +251,7 @@ const Game = ({ map }) => {
         while (taskNumber <= 100) {
           try {
             // 1. Fetch the text file
-            const response = await fetch(`/test/tasks/${taskNumber}.txt`);
+            const response = await fetch(`/tasks/${taskNumber}.txt`);
             if (!response.ok) break;
 
             const text = await response.text();
@@ -376,6 +376,75 @@ const Game = ({ map }) => {
   }, []);
 
   const undo = React.useCallback(() => {
+    // If capture window is open
+    if (pendingCaptureZone !== null) {
+      // Special handling for capital attacks with multiple stages
+      if (captureState.isCapital && captureState.consecutiveWins > 0) {
+        // Revert to previous stage instead of closing
+        const previousWins = captureState.consecutiveWins - 1;
+        const previousTask = captureState.capitalTasks[previousWins] || captureState.capitalTasks[0];
+
+        setCaptureState({
+          ...captureState,
+          consecutiveWins: previousWins,
+          currentTask: previousTask,
+          attackerAnswered: false,
+          defenderAnswered: false,
+          attackerCorrect: null,
+          defenderCorrect: null,
+          attackerAnswer: null,
+          defenderAnswer: null,
+          responseOrder: [],
+        });
+        return;
+      }
+
+      // For regular attacks or first stage of capital attack, close the window
+      // Save the current state (with window open) to future before closing
+      const stateWithWindowOpen = {
+        teams: JSON.parse(JSON.stringify(teams)),
+        gameState,
+        turnsOrder: [...turnsOrder],
+        currentTurn,
+        roundNumber,
+        activeTeam,
+        availableColors: [...availableColors],
+        usedTaskIds: new Set(usedTaskIds),
+        pendingCaptureZone,
+        captureState: JSON.parse(JSON.stringify(captureState)),
+      };
+
+      setFuture((prev) => [stateWithWindowOpen, ...prev]);
+
+      setPendingCaptureZone(null);
+      setCaptureState({
+        attackerAnswered: false,
+        defenderAnswered: false,
+        attackerCorrect: null,
+        defenderCorrect: null,
+        firstResponder: null,
+        isNeutral: false,
+        attackerAnswer: null,
+        defenderAnswer: null,
+        responseOrder: [],
+        isCapital: false,
+        consecutiveWins: 0,
+        requiredWins: 3,
+        currentTask: null,
+        capitalTasks: [],
+      });
+
+      // Also revert the used tasks that were marked when opening this window
+      // by restoring from the last history state
+      if (history.length > 0) {
+        const lastState = history[history.length - 1];
+        if (lastState.usedTaskIds) {
+          setUsedTaskIds(lastState.usedTaskIds);
+        }
+      }
+      return;
+    }
+
     if (history.length === 0) return;
 
     const previousState = history[history.length - 1];
@@ -405,6 +474,7 @@ const Game = ({ map }) => {
     const nextState = future[0];
     const newFuture = future.slice(1);
 
+    // Save current state to history before restoring
     const currentState = {
       teams: JSON.parse(JSON.stringify(teams)),
       gameState,
