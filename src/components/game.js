@@ -622,6 +622,10 @@ const Game = ({ map }) => {
             return next;
           });
         }
+
+        // Clear future/redo stack when starting a new attack
+        setFuture([]);
+
         setPendingCaptureZone(zoneId);
         setCaptureState({
           attackerAnswered: false,
@@ -715,6 +719,10 @@ const Game = ({ map }) => {
         // If we reach here, attacker has won 3 times - continue to capture
       } else if (state.isCapital && winner === 'defender') {
         // Defender won, capital defense successful - close modal and end turn
+        // Award 100 points to defender for successful defense
+        newTeams[zoneOwnerId].score += 100;
+        setTeams(newTeams);
+
         setPendingCaptureZone(null);
         setCaptureState({
           attackerAnswered: false,
@@ -766,6 +774,9 @@ const Game = ({ map }) => {
           newTeams[zoneOwnerId].zones = newTeams[zoneOwnerId].zones.filter(z => z !== zoneId);
           newTeams[activeTeam].zones.push(zoneId);
         }
+      } else if (winner === 'defender') {
+        // Defender successfully defended - award 100 points
+        newTeams[zoneOwnerId].score += 100;
       }
 
       setTeams(newTeams);
