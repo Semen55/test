@@ -66,6 +66,7 @@ const NextTurnButton = styled(ButtonCommon)`
     css`
       pointer-events: none;
       background-color: #7c7c7c;
+      display: none;
     `}
 `;
 
