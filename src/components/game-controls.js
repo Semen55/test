@@ -112,7 +112,7 @@ const GameControls = ({
             <AddTeamInput
               name="teamNameInput"
               value={teamNameInput}
-              placeholder="Имя комманды"
+              placeholder="Имя команды"
               onChange={(e) => setTeamNameInput(e.target.value)}
             />
             <AddTeamButton
