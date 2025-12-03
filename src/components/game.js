@@ -198,7 +198,7 @@ const RedoButton = styled(ActionButton)`
   right: 20px;
 `;
 
-const shuffleTurnsOrder = (arr) => arr.concat(arr.splice(0, 1));
+
 
 const initialColors = shuffleArray([
   '#7975b9',
@@ -251,7 +251,7 @@ const Game = ({ map }) => {
         while (taskNumber <= 100) {
           try {
             // 1. Fetch the text file
-            const response = await fetch(`/tasks/${taskNumber}.txt`);
+            const response = await fetch(`/test/tasks/${taskNumber}.txt`);
             if (!response.ok) break;
 
             const text = await response.text();
@@ -564,11 +564,9 @@ const Game = ({ map }) => {
     setRoundNumber(roundNumber + 1);
     setCurrentTurn(0);
 
-    const newTurnsOrder = shuffleTurnsOrder(
-      [...turnsOrder]
-        .map((teamIndex) => (teams[teamIndex].zones.length > 0 ? teamIndex : undefined))
-        .filter((i) => typeof i !== 'undefined')
-    );
+    const newTurnsOrder = teams
+      .map((_, index) => index)
+      .filter((index) => teams[index].zones.length > 0);
 
     setTurnsOrder(newTurnsOrder);
     setActiveTeam(newTurnsOrder[0]);
@@ -948,7 +946,7 @@ const Game = ({ map }) => {
               {/* Center Content */}
               <CaptureModalContent>
                 <CaptureModalTitle>
-                  РЕГИОН {pendingCaptureZone} {captureState.isCapital && `(СТОЛИЦА ${captureState.consecutiveWins}/${captureState.requiredWins})`}
+                  РЕГИОН {pendingCaptureZone} {captureState.isCapital && `(СТОЛИЦА ${captureState.consecutiveWins + 1}/${captureState.requiredWins})`}
                 </CaptureModalTitle>
                 <CaptureModalText>
                   {captureState.currentTask ? captureState.currentTask.text : (
