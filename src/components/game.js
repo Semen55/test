@@ -251,7 +251,7 @@ const Game = ({ map }) => {
         while (taskNumber <= 100) {
           try {
             // 1. Fetch the text file
-            const response = await fetch(`/tasks/${taskNumber}.txt`);
+            const response = await fetch(`/test/tasks/${taskNumber}.txt`);
             if (!response.ok) break;
 
             const text = await response.text();
